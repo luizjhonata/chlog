@@ -5,7 +5,7 @@ SCRIPTS_DIR ?= $(HOME)/Development/github.com/rios0rios0/pipelines
 VERSION ?= $(shell { git describe --tags --abbrev=0 2>/dev/null || echo "dev"; } | sed 's/^v//')
 LDFLAGS := -X main.version=$(VERSION)
 
-.PHONY: debug build install run
+.PHONY: debug build install run release
 
 build:
 	rm -rf bin
@@ -22,3 +22,7 @@ install:
 	make build
 	mkdir -p ~/.local/bin
 	cp -v bin/chlog ~/.local/bin/chlog
+
+release: build
+	bin/chlog batch auto
+	bin/chlog merge

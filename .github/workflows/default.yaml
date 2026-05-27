@@ -56,7 +56,13 @@ jobs:
           fi
 
       - name: 'Check changelog fragments'
+        env:
+          BRANCH: ${{ github.head_ref }}
         run: |
+          if [[ "$BRANCH" == chore/bump-* ]]; then
+            echo "Bump branch detected ('$BRANCH'), skipping fragment check."
+            exit 0
+          fi
           go build -o bin/chlog .
           bin/chlog check
     if: "github.event_name == 'pull_request'"

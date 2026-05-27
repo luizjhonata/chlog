@@ -14,3 +14,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `new` command: create changelog fragments with `--kind` and `--body` flags
 - `batch` command: compile fragments into version file with explicit semver, bump, or auto resolution
 - `merge` command: insert version files into CHANGELOG.md with correct ordering and cleanup
+- `check` command: verify unreleased fragments exist for CI gating

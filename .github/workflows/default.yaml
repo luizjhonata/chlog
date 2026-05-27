@@ -11,13 +11,233 @@ on:
       - 'main'
   workflow_dispatch:
 
-permissions:
-  checks: 'write' # code_check-style_golangci_lint
-  security-events: 'write' # security-sast_codeql
-  contents: 'write' # delivery-release
-
 jobs:
-  default:
-    uses: 'rios0rios0/pipelines/.github/workflows/go-binary.yaml@main'
-    with:
-      binary_name: 'chlog'
+  code_check-changelog_fragments:
+    name: 'code-check > quality:changelog-fragments'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: 'actions/checkout@v6'
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - uses: 'actions/setup-go@v5'
+        with:
+          go-version-file: 'go.mod'
+
+      - name: 'Check rebase status'
+        run: |
+          TARGET_BRANCH="${{ github.event.pull_request.base.ref || 'main' }}"
+          echo "Checking if branch is rebased on top of '$TARGET_BRANCH'..."
+
+          git fetch origin "$TARGET_BRANCH" --no-tags
+
+          if git merge-base --is-ancestor HEAD "origin/$TARGET_BRANCH"; then
+            echo "Branch HEAD is already part of '$TARGET_BRANCH'. Skipping rebase check."
+            exit 0
+          fi
+
+          if git merge-base --is-ancestor "origin/$TARGET_BRANCH" HEAD; then
+            echo "Branch is up-to-date with '$TARGET_BRANCH'. No rebase needed."
+          else
+            BEHIND_COUNT=$(git rev-list HEAD.."origin/$TARGET_BRANCH" --count 2>/dev/null || echo "unknown")
+            echo ""
+            echo "============================================================"
+            echo "  ERROR: Branch is NOT rebased on top of '$TARGET_BRANCH'."
+            echo "  The branch is $BEHIND_COUNT commit(s) behind."
+            echo ""
+            echo "  Please rebase your branch:"
+            echo "    git fetch origin $TARGET_BRANCH"
+            echo "    git rebase origin/$TARGET_BRANCH"
+            echo "    git push --force-with-lease"
+            echo "============================================================"
+            echo ""
+            exit 1
+          fi
+
+      - name: 'Check changelog fragments'
+        run: |
+          go build -o bin/chlog .
+          bin/chlog check
+    if: "github.event_name == 'pull_request'"
+
+  code_check-style_golangci_lint:
+    name: 'code-check > style:golangci-lint'
+    runs-on: 'ubuntu-latest'
+    steps:
+      - uses: 'rios0rios0/pipelines/github/golang/stages/10-code-check/golangci-lint@main'
+    continue-on-error: true
+    if: "!startsWith(github.ref, 'refs/tags/')"
+
+  security-sast_codeql:
+    name: 'security > sast:codeql'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: 'read'
+      security-events: 'write'
+    steps:
+      - uses: 'rios0rios0/pipelines/github/global/stages/20-security/codeql@main'
+        with:
+          codeql_language: 'go'
+    if: "!startsWith(github.ref, 'refs/tags/')"
+
+  security-sast_semgrep:
+    name: 'security > sast:semgrep'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: 'read'
+      security-events: 'write'
+    steps:
+      - uses: 'rios0rios0/pipelines/github/global/stages/20-security/semgrep@main'
+        with:
+          semgrep_lang: 'golang'
+    if: "!startsWith(github.ref, 'refs/tags/')"
+
+  security-sast_gitleaks:
+    name: 'security > sast:gitleaks'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: 'read'
+      security-events: 'write'
+    steps:
+      - uses: 'rios0rios0/pipelines/github/global/stages/20-security/gitleaks@main'
+    if: "!startsWith(github.ref, 'refs/tags/')"
+
+  security-sast_hadolint:
+    name: 'security > sast:hadolint'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: 'read'
+      security-events: 'write'
+    steps:
+      - uses: 'rios0rios0/pipelines/github/global/stages/20-security/hadolint@main'
+    continue-on-error: true
+    if: "!startsWith(github.ref, 'refs/tags/')"
+
+  security-sast_trivy:
+    name: 'security > sast:trivy'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: 'read'
+      security-events: 'write'
+    steps:
+      - uses: 'rios0rios0/pipelines/github/global/stages/20-security/trivy@main'
+    continue-on-error: true
+    if: "!startsWith(github.ref, 'refs/tags/')"
+
+  security-sca_trivy:
+    name: 'security > sca:trivy'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: 'read'
+      security-events: 'write'
+    steps:
+      - uses: 'rios0rios0/pipelines/github/global/stages/20-security/trivy-sca@main'
+    continue-on-error: true
+    if: "!startsWith(github.ref, 'refs/tags/')"
+
+  security-sca_govulncheck:
+    name: 'security > sca:govulncheck'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: 'read'
+      security-events: 'write'
+    steps:
+      - uses: 'rios0rios0/pipelines/github/golang/stages/20-security/govulncheck@main'
+    continue-on-error: true
+    if: "!startsWith(github.ref, 'refs/tags/')"
+
+  tests-test_all:
+    name: 'tests > test:all'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: 'read'
+      checks: 'write'
+    steps:
+      - uses: 'rios0rios0/pipelines/github/golang/stages/30-tests/all@main'
+
+      - name: 'Test Results'
+        if: "always() && hashFiles('junit.xml') != ''"
+        uses: 'dorny/test-reporter@v3'
+        with:
+          name: 'Test Results'
+          path: 'junit.xml'
+          reporter: 'java-junit'
+
+      - name: 'Upload Coverage Report'
+        if: "always() && hashFiles('coverage.txt') != ''"
+        uses: 'actions/upload-artifact@v7'
+        with:
+          name: 'coverage-report'
+          path: |
+            coverage.txt
+            cobertura.xml
+          if-no-files-found: ignore
+          retention-days: 30
+    if: "!startsWith(github.ref, 'refs/tags/')"
+
+  # management stage — requires SONAR_HOST_URL (repository variable) and SONAR_TOKEN (repository secret)
+  management-report_sonarqube:
+    name: 'management > report:sonarqube'
+    runs-on: 'ubuntu-latest'
+    needs: ['tests-test_all']
+    if: "!startsWith(github.ref, 'refs/tags/')"
+    continue-on-error: true
+    steps:
+      - name: 'Checkout code'
+        uses: 'actions/checkout@v6'
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: 'Download coverage artifact'
+        uses: 'actions/download-artifact@v8'
+        with:
+          name: 'coverage-report'
+          path: '.'
+        continue-on-error: true
+
+      - name: 'Install sonar-scanner'
+        run: |
+          SCANNER_VERSION="6.2.1.4610"
+          curl --proto '=https' -sSLo /tmp/sonar-scanner.zip "https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${SCANNER_VERSION}-linux-x64.zip"
+          unzip -q /tmp/sonar-scanner.zip -d /tmp
+          echo "/tmp/sonar-scanner-${SCANNER_VERSION}-linux-x64/bin" >> "$GITHUB_PATH"
+
+      - name: 'Checkout scripts'
+        uses: 'rios0rios0/pipelines/github/global/abstracts/scripts-repo@main'
+
+      - name: 'Run SonarQube'
+        run: '${{ env.SCRIPTS_DIR }}/global/scripts/tools/sonarqube/run.sh'
+        shell: 'bash'
+        env:
+          SONAR_HOST_URL: ${{ vars.SONAR_HOST_URL }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  # delivery stage
+  delivery-release:
+    name: 'delivery > release'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: 'write'
+    outputs:
+      tag_name: ${{ steps.release.outputs.tag_name }}
+    steps:
+      - id: 'release'
+        uses: 'rios0rios0/pipelines/github/global/stages/40-delivery/release@main'
+    needs: ['tests-test_all']
+    if: "github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'chore/bump-')"
+
+  delivery-binary:
+    name: 'delivery > binary'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: 'write'
+    steps:
+      - uses: 'rios0rios0/pipelines/github/golang/stages/40-delivery/binary@main'
+        with:
+          binary_name: 'chlog'
+          binary_path: '.'
+          tag_name: ${{ needs.delivery-release.outputs.tag_name || github.ref_name }}
+    needs: ['tests-test_all', 'delivery-release']
+    if: "!failure() && (startsWith(github.ref, 'refs/tags/') || needs.delivery-release.outputs.tag_name != '')"

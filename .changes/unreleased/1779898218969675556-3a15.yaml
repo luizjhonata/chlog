@@ -1,0 +1,3 @@
+kind: Changed
+body: replace shared pipeline delegation with local workflow using `chlog check` instead of CHANGELOG.md check
+time: 2026-05-27T16:10:18.969114804Z

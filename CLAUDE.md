@@ -13,15 +13,20 @@ make build    # compile binary to bin/chlog
 make debug    # compile with debug symbols
 make run      # go run .
 make install  # build + copy to ~/.local/bin
-make lint     # run linters (from shared pipelines)
-make test     # run tests (from shared pipelines)
-make sast     # run security analysis (from shared pipelines)
 ```
 
-Single test:
+`make lint`, `make test`, and `make sast` require the [shared pipelines](https://github.com/rios0rios0/pipelines) repo cloned at `~/Development/github.com/rios0rios0/pipelines`. Without it, use the commands below directly.
+
+Lint (CI uses golangci-lint v2 with external config — local v1 misses issues):
 ```bash
-go test -tags unit -run "TestName" ./cmd/
-go test -tags unit -run "TestName" ./internal/
+~/go/bin/golangci-lint run --config ~/Development/github.com/rios0rios0/pipelines/global/scripts/languages/golang/golangci-lint/.golangci.yml ./...
+```
+
+Tests:
+```bash
+go test -tags unit -count=1 -v ./...
+go test -tags unit -run "TestName" ./cmd/        # single test
+go test -tags unit -run "TestName" ./internal/   # single test
 ```
 
 ## Architecture
@@ -44,13 +49,45 @@ Flat, idiomatic Go. No CQRS, no DI container.
 - Build tag: `//go:build unit` on all test files
 - BDD structure: `// given`, `// when`, `// then`
 - Test names: `t.Run("should ... when ...", ...)`
-- `t.Parallel()` on every test
+- Do NOT use `t.Parallel()` in `cmd/` tests — they use `os.Chdir` which is process-global
+- `t.Parallel()` is used in `internal/` tests
 - `t.TempDir()` for filesystem isolation
 - testify/assert + testify/require
 
+## Commit Conventions
+
+- Format: `type(scope): concise imperative description`
+- Types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`
+- Trailer: `Signed-off-by: Name <email>` (no Co-Authored-By)
+- Max 72 chars title, lowercase first letter after colon, no period at end
+
+## Changelog Workflow
+
+This project uses its own tool for changelog management. Do NOT edit `CHANGELOG.md` directly.
+
+```bash
+# 1. For every PR, create a fragment:
+chlog new --kind Added --body "description of the change"
+
+# 2. At release time, compile fragments into a version file:
+chlog batch auto
+
+# 3. Merge version file into CHANGELOG.md:
+chlog merge
+```
+
+Fragment files live in `.changes/unreleased/` as YAML:
+```yaml
+kind: Added
+body: description of the change
+time: 2026-05-27T12:00:00Z
+```
+
+Every PR MUST include at least one fragment. Use `chlog check` in CI to enforce this.
+
 ## Configuration
 
-`.chlog.yaml` searched from cwd upward. Defaults provided when not found.
+`.chlog.yaml` in project root. Searched upward from cwd. Defaults used when not found.
 
 ## Commands
 

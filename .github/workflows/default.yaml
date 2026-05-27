@@ -227,10 +227,12 @@ jobs:
     permissions:
       contents: 'write'
     outputs:
-      tag_name: ${{ steps.release.outputs.tag_name }}
+      tag_name: v${{ steps.release.outputs.tag_name }}
     steps:
       - id: 'release'
         uses: 'rios0rios0/pipelines/github/global/stages/40-delivery/release@main'
+        with:
+          tag_prefix: 'v'
     needs: ['tests-test_all']
     if: "github.event_name == 'push' && github.ref == 'refs/heads/main' && contains(github.event.head_commit.message, 'chore/bump-')"
 

@@ -10,3 +10,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - initial project scaffold with Go module, Cobra CLI, Makefile, and CI/CD pipeline
+- core types: `Config` with YAML loading and upward search, `Change` with marshal/unmarshal and sorting

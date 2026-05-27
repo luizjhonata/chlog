@@ -18,6 +18,7 @@ func newRootCmd(version string) *cobra.Command {
 	cmd.SetVersionTemplate(fmt.Sprintf("chlog version: %s\n", version))
 	cmd.AddCommand(newNewCmd())
 	cmd.AddCommand(newBatchCmd())
+	cmd.AddCommand(newMergeCmd())
 
 	return cmd
 }

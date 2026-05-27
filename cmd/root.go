@@ -9,12 +9,14 @@ import (
 
 func newRootCmd(version string) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "chlog",
-		Short:   "Fragment-based changelog management",
-		Long:    "chlog eliminates merge conflicts on CHANGELOG.md by using individual fragment files per change.",
-		Version: version,
+		Use:          "chlog",
+		Short:        "Fragment-based changelog management",
+		Long:         "chlog eliminates merge conflicts on CHANGELOG.md by using individual fragment files per change.",
+		Version:      version,
+		SilenceUsage: true,
 	}
 	cmd.SetVersionTemplate(fmt.Sprintf("chlog version: %s\n", version))
+	cmd.AddCommand(newNewCmd())
 
 	return cmd
 }

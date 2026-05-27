@@ -56,8 +56,9 @@ jobs:
           fi
 
       - name: 'Check changelog fragments'
+        env:
+          BRANCH: ${{ github.head_ref }}
         run: |
-          BRANCH="${{ github.head_ref }}"
           if [[ "$BRANCH" == chore/bump-* ]]; then
             echo "Bump branch detected ('$BRANCH'), skipping fragment check."
             exit 0

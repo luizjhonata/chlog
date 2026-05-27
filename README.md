@@ -1,6 +1,26 @@
 # chlog
 
+[![CI](https://github.com/luizjhonata/chlog/actions/workflows/default.yaml/badge.svg)](https://github.com/luizjhonata/chlog/actions/workflows/default.yaml)
+[![Release](https://img.shields.io/github/v/release/luizjhonata/chlog)](https://github.com/luizjhonata/chlog/releases/latest)
+[![Go Reference](https://pkg.go.dev/badge/github.com/luizjhonata/chlog.svg)](https://pkg.go.dev/github.com/luizjhonata/chlog)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
 Fragment-based changelog management for teams. Each change gets its own file — no more merge conflicts on `CHANGELOG.md`.
+
+## Features
+
+- **No merge conflicts** — each PR creates a uniquely-named YAML file instead of editing a shared `CHANGELOG.md`
+- **Keep a Changelog format** — outputs standard `[Unreleased]`, `### Added`, `### Fixed` sections
+- **Automatic version bumps** — infer the next semver version from change kinds (Added → minor, Fixed → patch)
+- **CI gating** — `chlog check` enforces that every PR includes a changelog entry
+- **Minimal and fast** — single binary, no runtime dependencies
+
+## Why chlog?
+
+- **Four commands** — `new`, `batch`, `merge`, `check`. Nothing else to learn
+- **Explicit over implicit** — developers write what changed, not structured commit messages
+- **~500 lines of Go** — easy to audit, fork, and contribute
+- **Zero configuration required** — sensible defaults, optional `.chlog.yaml` for customization
 
 ## How It Works
 
@@ -17,11 +37,17 @@ Instead of editing `CHANGELOG.md` directly, each PR adds a small YAML fragment t
 
 ## Install
 
+### Pre-built binaries
+
+Download from [GitHub Releases](https://github.com/luizjhonata/chlog/releases/latest). Binaries are available for Linux, macOS, and Windows (amd64/arm64).
+
+### Go install
+
 ```bash
 go install github.com/luizjhonata/chlog@latest
 ```
 
-Or build from source:
+### Build from source
 
 ```bash
 git clone git@github.com:luizjhonata/chlog.git
@@ -43,9 +69,9 @@ Kind matching is case-insensitive. The fragment is written to `.changes/unreleas
 ### Compile fragments into a version file
 
 ```bash
-chlog batch 1.0.0          # explicit version
-chlog batch minor           # bump minor from latest
-chlog batch auto            # infer bump from kind→level mapping
+chlog batch 1.0.0   # explicit version
+chlog batch minor   # bump minor from latest
+chlog batch auto    # infer bump from kind→level mapping
 ```
 
 This creates `.changes/v1.0.0.md` with Keep a Changelog format and deletes consumed fragments.
@@ -65,12 +91,6 @@ chlog check
 ```
 
 Exits 0 if unreleased fragments exist, exits 1 otherwise. Use in CI to enforce that every PR includes a changelog entry.
-
-### Version
-
-```bash
-chlog --version
-```
 
 ## Release Flow
 
@@ -132,6 +152,12 @@ Add `chlog check` to your PR pipeline to require a changelog fragment:
 - name: Verify changelog fragment
   run: chlog check
 ```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup, commit conventions, and code style guidelines.
+
+Found a bug or have a feature request? [Open an issue](https://github.com/luizjhonata/chlog/issues).
 
 ## License
 

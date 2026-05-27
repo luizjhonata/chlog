@@ -227,7 +227,7 @@ jobs:
     permissions:
       contents: 'write'
     outputs:
-      tag_name: ${{ steps.release.outputs.tag_name }}
+      tag_name: v${{ steps.release.outputs.tag_name }}
     steps:
       - id: 'release'
         uses: 'rios0rios0/pipelines/github/global/stages/40-delivery/release@main'

@@ -33,10 +33,31 @@ func LoadChange(path string) (*Change, error) {
 }
 
 func (c *Change) Marshal() ([]byte, error) {
-	data, err := yaml.Marshal(c)
+	timeStr := c.Time.UTC().Format(time.RFC3339Nano)
+
+	doc := &yaml.Node{
+		Kind: yaml.DocumentNode,
+		Content: []*yaml.Node{
+			{
+				Kind: yaml.MappingNode,
+				Tag:  "!!map",
+				Content: []*yaml.Node{
+					{Kind: yaml.ScalarNode, Value: "kind"},
+					{Kind: yaml.ScalarNode, Value: c.Kind, Style: yaml.SingleQuotedStyle},
+					{Kind: yaml.ScalarNode, Value: "body"},
+					{Kind: yaml.ScalarNode, Value: c.Body, Style: yaml.SingleQuotedStyle},
+					{Kind: yaml.ScalarNode, Value: "time"},
+					{Kind: yaml.ScalarNode, Value: timeStr},
+				},
+			},
+		},
+	}
+
+	data, err := yaml.Marshal(doc)
 	if err != nil {
 		return nil, fmt.Errorf("marshalling change: %w", err)
 	}
+
 	return data, nil
 }
 

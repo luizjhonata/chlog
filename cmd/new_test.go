@@ -58,8 +58,8 @@ func TestNewCmd(t *testing.T) {
 
 		data, readErr := os.ReadFile(filepath.Join(dir, ".changes", "unreleased", entries[0].Name()))
 		require.NoError(t, readErr)
-		assert.Contains(t, string(data), "kind: Added")
-		assert.Contains(t, string(data), "body: add new feature")
+		assert.Contains(t, string(data), "kind: 'Added'")
+		assert.Contains(t, string(data), "body: 'add new feature'")
 	})
 
 	t.Run("should reject unknown kind", func(t *testing.T) {
@@ -94,7 +94,7 @@ func TestNewCmd(t *testing.T) {
 
 		data, readErr := os.ReadFile(filepath.Join(dir, ".changes", "unreleased", entries[0].Name()))
 		require.NoError(t, readErr)
-		assert.Contains(t, string(data), "kind: Fixed")
+		assert.Contains(t, string(data), "kind: 'Fixed'")
 	})
 
 	t.Run("should create directories when they do not exist", func(t *testing.T) {

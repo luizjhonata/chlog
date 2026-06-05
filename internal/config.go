@@ -86,11 +86,8 @@ func LoadConfigFromPath(path string) (*Config, error) {
 	return cfg, nil
 }
 
-func FindConfigUpward() (string, error) {
-	dir, err := os.Getwd()
-	if err != nil {
-		return "", fmt.Errorf("getting working directory: %w", err)
-	}
+func FindConfig(startDir string) (string, error) {
+	dir := startDir
 
 	for {
 		for _, name := range configFileNames() {
@@ -106,6 +103,15 @@ func FindConfigUpward() (string, error) {
 		}
 		dir = parent
 	}
+}
+
+func FindConfigUpward() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("getting working directory: %w", err)
+	}
+
+	return FindConfig(dir)
 }
 
 func (c *Config) Validate() error {

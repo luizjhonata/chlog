@@ -1,0 +1,3 @@
+kind: 'Added'
+body: 'add `chlog hook install` and `chlog hook uninstall` commands for pre-commit hook management'
+time: 2026-06-05T17:54:15.766410817Z

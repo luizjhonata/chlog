@@ -13,11 +13,12 @@ Fragment-based changelog management for teams. Each change gets its own file —
 - **Keep a Changelog format** — outputs standard `[Unreleased]`, `### Added`, `### Fixed` sections
 - **Automatic version bumps** — infer the next semver version from change kinds (Added → minor, Fixed → patch)
 - **CI gating** — `chlog check` enforces that every PR includes a changelog entry
+- **Git hook** — `chlog hook install` adds a pre-commit hook that validates fragments before each commit
 - **Minimal and fast** — single binary, no runtime dependencies
 
 ## Why chlog?
 
-- **Four commands** — `new`, `batch`, `merge`, `check`. Nothing else to learn
+- **Five commands** — `new`, `batch`, `merge`, `check`, `hook`. Nothing else to learn
 - **Explicit over implicit** — developers write what changed, not structured commit messages
 - **~500 lines of Go** — easy to audit, fork, and contribute
 - **Zero configuration required** — sensible defaults, optional `.chlog.yaml` for customization
@@ -91,6 +92,19 @@ chlog check
 ```
 
 Exits 0 if unreleased fragments exist, exits 1 otherwise. Use in CI to enforce that every PR includes a changelog entry.
+
+### Git hook
+
+```bash
+chlog hook install      # install pre-commit hook
+chlog hook uninstall    # remove it
+```
+
+The hook runs `chlog check` before each commit. If no unreleased fragments exist, the commit is blocked.
+
+- Idempotent — re-installing when the hook is already present is a no-op
+- Safe — refuses to overwrite an existing non-chlog hook unless `--force` is passed
+- The hook is identified by a `# chlog:managed` marker comment
 
 ## Release Flow
 

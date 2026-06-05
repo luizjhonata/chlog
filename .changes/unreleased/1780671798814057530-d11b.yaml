@@ -1,0 +1,3 @@
+kind: 'Changed'
+body: 'extract `FindConfig(startDir)` pure function from `FindConfigUpward()` for testability'
+time: 2026-06-05T15:03:18.813808537Z

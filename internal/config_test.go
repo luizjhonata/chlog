@@ -120,27 +120,28 @@ kinds:
 	})
 }
 
-func TestFindConfigUpward(t *testing.T) {
-	t.Run("should find config in current directory", func(t *testing.T) {
+func TestFindConfig(t *testing.T) {
+	t.Parallel()
+
+	t.Run("should find config in start directory", func(t *testing.T) {
+		t.Parallel()
+
 		// given
 		dir := t.TempDir()
 		configPath := filepath.Join(dir, ".chlog.yaml")
 		require.NoError(t, os.WriteFile(configPath, []byte("kinds:\n  - label: Fixed\n"), 0o644))
 
-		originalDir, err := os.Getwd()
-		require.NoError(t, err)
-		require.NoError(t, os.Chdir(dir))
-		t.Cleanup(func() { os.Chdir(originalDir) })
-
 		// when
-		found, err := FindConfigUpward()
+		found, err := FindConfig(dir)
 
 		// then
 		require.NoError(t, err)
 		assert.Equal(t, configPath, found)
 	})
 
-	t.Run("should find config in parent directory", func(t *testing.T) {
+	t.Run("should find config in parent directory when starting from nested subdir", func(t *testing.T) {
+		t.Parallel()
+
 		// given
 		dir := t.TempDir()
 		configPath := filepath.Join(dir, ".chlog.yaml")
@@ -149,13 +150,24 @@ func TestFindConfigUpward(t *testing.T) {
 		child := filepath.Join(dir, "sub", "deep")
 		require.NoError(t, os.MkdirAll(child, 0o755))
 
-		originalDir, err := os.Getwd()
+		// when
+		found, err := FindConfig(child)
+
+		// then
 		require.NoError(t, err)
-		require.NoError(t, os.Chdir(child))
-		t.Cleanup(func() { os.Chdir(originalDir) })
+		assert.Equal(t, configPath, found)
+	})
+
+	t.Run("should find .chlog.yml variant", func(t *testing.T) {
+		t.Parallel()
+
+		// given
+		dir := t.TempDir()
+		configPath := filepath.Join(dir, ".chlog.yml")
+		require.NoError(t, os.WriteFile(configPath, []byte("kinds:\n  - label: Fixed\n"), 0o644))
 
 		// when
-		found, err := FindConfigUpward()
+		found, err := FindConfig(dir)
 
 		// then
 		require.NoError(t, err)
@@ -163,16 +175,13 @@ func TestFindConfigUpward(t *testing.T) {
 	})
 
 	t.Run("should return error when no config exists", func(t *testing.T) {
+		t.Parallel()
+
 		// given
 		dir := t.TempDir()
 
-		originalDir, err := os.Getwd()
-		require.NoError(t, err)
-		require.NoError(t, os.Chdir(dir))
-		t.Cleanup(func() { os.Chdir(originalDir) })
-
 		// when
-		_, err = FindConfigUpward()
+		_, err := FindConfig(dir)
 
 		// then
 		assert.ErrorIs(t, err, ErrConfigNotFound)

@@ -13,7 +13,7 @@ Fragment-based changelog management for teams. Each change gets its own file —
 - **Keep a Changelog format** — outputs standard `[Unreleased]`, `### Added`, `### Fixed` sections
 - **Automatic version bumps** — infer the next semver version from change kinds (Added → minor, Fixed → patch)
 - **CI gating** — `chlog check` enforces that every PR includes a changelog entry
-- **Git hook** — `chlog hook install` adds a pre-commit hook that validates fragments before each commit
+- **Git hook** — `chlog hook install` sets up a global pre-commit hook that validates fragments in any chlog-enabled repo
 - **Minimal and fast** — single binary, no runtime dependencies
 
 ## Why chlog?
@@ -96,15 +96,19 @@ Exits 0 if unreleased fragments exist, exits 1 otherwise. Use in CI to enforce t
 ### Git hook
 
 ```bash
-chlog hook install      # install pre-commit hook
-chlog hook uninstall    # remove it
+chlog hook install              # global hook (install once, works in every repo)
+chlog hook install --local      # inject into current repo's existing hook (e.g., Husky)
+chlog hook uninstall            # remove global hook
+chlog hook uninstall --local    # remove injected block from current repo
 ```
 
-The hook runs `chlog check` before each commit. If no unreleased fragments exist, the commit is blocked.
+**Global mode (default)** — sets `core.hooksPath` so the hook runs in every repo. Detects `.chlog.yaml` before acting — repos without chlog are unaffected. Chains per-repo hooks automatically so existing hooks keep working.
+
+**Local mode (`--local`)** — appends a chlog block to the current repo's pre-commit hook. Use this when the project already manages hooks via Husky, Lefthook, or similar. The block is injected without modifying existing hook content.
 
 - Idempotent — re-installing when the hook is already present is a no-op
-- Safe — refuses to overwrite an existing non-chlog hook unless `--force` is passed
-- The hook is identified by a `# chlog:managed` marker comment
+- Safe — refuses to override an existing `core.hooksPath` unless `--force` is passed
+- `--force` re-installs hooks (useful after a chlog update)
 
 ## Release Flow
 

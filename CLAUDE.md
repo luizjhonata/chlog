@@ -97,6 +97,6 @@ Every PR MUST include at least one fragment. Use `chlog check` in CI to enforce 
 | `chlog batch <version\|major\|minor\|patch\|auto>` | Compile fragments into versioned file |
 | `chlog merge` | Append version files to CHANGELOG.md |
 | `chlog check` | Validate fragments exist (CI) |
-| `chlog hook install [--force]` | Install a pre-commit hook that runs `chlog check` |
-| `chlog hook uninstall` | Remove the chlog-managed pre-commit hook |
+| `chlog hook install [--local] [--force]` | Install a global or local pre-commit hook that runs `chlog check` |
+| `chlog hook uninstall [--local]` | Remove the chlog-managed hook (global or local) |
 | `chlog --version` | Print version |

@@ -21,6 +21,7 @@ func newRootCmd(version string) *cobra.Command {
 	cmd.AddCommand(newMergeCmd())
 	cmd.AddCommand(newCheckCmd())
 	cmd.AddCommand(newHookCmd())
+	cmd.AddCommand(newAiCmd())
 
 	return cmd
 }

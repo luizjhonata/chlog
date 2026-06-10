@@ -241,7 +241,7 @@ func installLocal(cmd *cobra.Command, force bool) error {
 			return nil
 		}
 
-		content = removeChlogBlock(content)
+		content = removeMarkedBlock(content, localBlockStart, localBlockEnd)
 		trimmed := strings.TrimRight(content, "\n")
 
 		//nolint:gosec // G306 - hook must be executable
@@ -297,7 +297,7 @@ func uninstallLocal(cmd *cobra.Command) error {
 		return errHookBlockNotFound
 	}
 
-	remaining := strings.TrimRight(removeChlogBlock(content), "\n")
+	remaining := strings.TrimRight(removeMarkedBlock(content, localBlockStart, localBlockEnd), "\n")
 
 	if remaining == "" || remaining == "#!/bin/sh" {
 		err = os.Remove(hookPath)
@@ -372,13 +372,13 @@ func resolveLocalHooksDir(gitDir string) string {
 	return filepath.Join(gitDir, "hooks")
 }
 
-func removeChlogBlock(content string) string {
-	before, rest, found := strings.Cut(content, localBlockStart)
+func removeMarkedBlock(content, start, end string) string {
+	before, rest, found := strings.Cut(content, start)
 	if !found {
 		return content
 	}
 
-	_, after, found := strings.Cut(rest, localBlockEnd)
+	_, after, found := strings.Cut(rest, end)
 	if !found {
 		return content
 	}

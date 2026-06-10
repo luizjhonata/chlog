@@ -14,11 +14,12 @@ Fragment-based changelog management for teams. Each change gets its own file —
 - **Automatic version bumps** — infer the next semver version from change kinds (Added → minor, Fixed → patch)
 - **CI gating** — `chlog check` enforces that every PR includes a changelog entry
 - **Git hook** — `chlog hook install` sets up a global pre-commit hook that validates fragments in any chlog-enabled repo
+- **AI assistant integration** — `chlog ai setup` teaches your installed AI assistants to create fragments automatically
 - **Minimal and fast** — single binary, no runtime dependencies
 
 ## Why chlog?
 
-- **Five commands** — `new`, `batch`, `merge`, `check`, `hook`. Nothing else to learn
+- **Six commands** — `new`, `batch`, `merge`, `check`, `hook`, `ai`. Nothing else to learn
 - **Explicit over implicit** — developers write what changed, not structured commit messages
 - **~500 lines of Go** — easy to audit, fork, and contribute
 - **Zero configuration required** — sensible defaults, optional `.chlog.yaml` for customization
@@ -109,6 +110,60 @@ chlog hook uninstall --local    # remove injected block from current repo
 - Idempotent — re-installing when the hook is already present is a no-op
 - Safe — refuses to override an existing `core.hooksPath` unless `--force` is passed
 - `--force` re-installs hooks (useful after a chlog update)
+
+### AI assistant integration
+
+```bash
+chlog ai setup           # inject chlog rules into detected assistants
+chlog ai setup --force   # re-inject the block if it already exists
+```
+
+Detects which AI coding assistants are installed on your machine and injects a
+mandatory changelog rule into the matching project instruction file, so the
+assistant creates fragments automatically whenever you work in a chlog repo.
+
+| Assistant | Detected via | Instruction file |
+|-----------|--------------|------------------|
+| Claude Code | `claude` in `PATH` or `~/.claude/` | `CLAUDE.md` |
+| OpenAI Codex | `codex` in `PATH` or `~/.codex/` | `AGENTS.md` |
+| Cursor | `~/.cursor/` or app config dir | `AGENTS.md` |
+| Gemini CLI | `gemini` in `PATH` or `~/.gemini/` | `GEMINI.md` |
+| GitHub Copilot | `~/.config/github-copilot/` | `.github/copilot-instructions.md` |
+| Windsurf | `~/.windsurf/`, `~/.codeium/windsurf/` or app config dir | `.windsurf/rules/chlog.md` |
+
+- The injected rule is conditional — it only applies in repos that have a `.chlog.yaml`, so it is safe to commit and share
+- Idempotent — the block is delimited by `<!-- chlog:start -->` / `<!-- chlog:end -->` and existing content is preserved
+- If no supported assistant is detected, the command does nothing
+- `--force` re-injects the block (useful after a chlog update)
+
+#### Adding the rule manually
+
+If detection misses your assistant, or you prefer to set it up by hand, copy the
+block below into your assistant's instruction file (`CLAUDE.md`, `AGENTS.md`,
+`GEMINI.md`, `.github/copilot-instructions.md`, `.windsurf/rules/chlog.md`, …).
+The `Valid kinds` line should mirror the `kinds` in your `.chlog.yaml` (the
+values below are the defaults).
+
+```markdown
+<!-- chlog:start -->
+## Changelog (chlog) — MANDATORY
+
+If the repository you are working in uses chlog (a `.chlog.yaml` or `.chlog.yml`
+config file, or a `.changes/` directory, exists at the project root), the
+following is binding and ALWAYS applies: whenever you make ANY change, you MUST
+create a changelog fragment as part of the same change — automatically, without
+being asked, before committing.
+
+- Do NOT edit CHANGELOG.md directly; it is generated from fragments.
+- Create the fragment with:
+  `chlog new --kind <Kind> --body "<imperative description>"`
+- Valid kinds: Added, Changed, Deprecated, Removed, Fixed, Security
+- Choose the kind that best matches the change (e.g., new feature → Added,
+  bug fix → Fixed, behavior change → Changed, removal → Removed, security fix → Security).
+- Fragments are YAML files in `.changes/unreleased/`; stage them with your commit.
+- `chlog check` fails the build when a fragment is missing — never skip it.
+<!-- chlog:end -->
+```
 
 ## Release Flow
 

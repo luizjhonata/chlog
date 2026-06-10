@@ -168,9 +168,12 @@ func installGlobal(cmd *cobra.Command, force bool) error {
 		}
 	}
 
-	err = exec.CommandContext(
-		context.Background(), "git", "config", "--global", "core.hooksPath", dir,
-	).Run()
+	setCmd, err := gitCommand("config", "--global", "core.hooksPath", dir)
+	if err != nil {
+		return err
+	}
+
+	err = setCmd.Run()
 	if err != nil {
 		return fmt.Errorf("setting core.hooksPath: %w", err)
 	}
@@ -198,9 +201,12 @@ func uninstallGlobal(cmd *cobra.Command) error {
 		return fmt.Errorf("core.hooksPath is set to %q, which is not managed by chlog", currentPath)
 	}
 
-	err = exec.CommandContext(
-		context.Background(), "git", "config", "--global", "--unset", "core.hooksPath",
-	).Run()
+	unsetCmd, err := gitCommand("config", "--global", "--unset", "core.hooksPath")
+	if err != nil {
+		return err
+	}
+
+	err = unsetCmd.Run()
 	if err != nil {
 		return fmt.Errorf("unsetting core.hooksPath: %w", err)
 	}
@@ -311,6 +317,15 @@ func uninstallLocal(cmd *cobra.Command) error {
 	return nil
 }
 
+func gitCommand(args ...string) (*exec.Cmd, error) {
+	gitPath, lookErr := exec.LookPath("git")
+	if lookErr != nil {
+		return nil, fmt.Errorf("git executable not found: %w", lookErr)
+	}
+
+	return exec.CommandContext(context.Background(), gitPath, args...), nil
+}
+
 func globalHooksDir() (string, error) {
 	configDir, err := os.UserConfigDir()
 	if err != nil {
@@ -321,9 +336,12 @@ func globalHooksDir() (string, error) {
 }
 
 func getGlobalHooksPath() string {
-	out, err := exec.CommandContext(
-		context.Background(), "git", "config", "--global", "--get", "core.hooksPath",
-	).Output()
+	cmd, err := gitCommand("config", "--global", "--get", "core.hooksPath")
+	if err != nil {
+		return ""
+	}
+
+	out, err := cmd.Output()
 	if err != nil {
 		return ""
 	}
@@ -334,9 +352,12 @@ func getGlobalHooksPath() string {
 func resolveLocalHooksDir(gitDir string) string {
 	repoRoot := filepath.Dir(gitDir)
 
-	out, err := exec.CommandContext(
-		context.Background(), "git", "-C", repoRoot, "config", "--local", "--get", "core.hooksPath",
-	).Output()
+	cmd, err := gitCommand("-C", repoRoot, "config", "--local", "--get", "core.hooksPath")
+	if err != nil {
+		return filepath.Join(gitDir, "hooks")
+	}
+
+	out, err := cmd.Output()
 	if err == nil {
 		localPath := strings.TrimSpace(string(out))
 		if localPath != "" {

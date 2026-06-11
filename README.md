@@ -78,6 +78,10 @@ chlog batch auto    # infer bump from kind→level mapping
 
 This creates `.changes/v1.0.0.md` with Keep a Changelog format and deletes consumed fragments.
 
+The base version is resolved from the highest of: existing version files, git tags, and `CHANGELOG.md` headings.
+
+While the project is below `1.0.0`, `auto` never graduates to `1.0.0` on its own — a breaking change bumps the minor instead (e.g. `0.2.0` → `0.3.0`), per SemVer's unstable-`0.x` rule. Reaching `1.0.0` is a deliberate, explicit step (`chlog batch major` or `chlog batch 1.0.0`).
+
 ### Merge into CHANGELOG.md
 
 ```bash

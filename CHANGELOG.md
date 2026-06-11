@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-06-11
+
+### Fixed
+
+- resolve `batch` relative version bumps from git tags and CHANGELOG.md, not only leftover version files (bumps no longer reset to 0.0.0 after a release)
+
 ## [0.2.0] - 2026-06-11
 
 ### Added

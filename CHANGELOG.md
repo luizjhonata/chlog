@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-11
+
+### Added
+
+- `chlog ai setup` to inject changelog rules into detected AI assistant instruction files
+- add `chlog hook install` and `chlog hook uninstall` commands for pre-commit hook management
+
+### Changed
+
+- replace per-repo hook with global `core.hooksPath` hook (default) and local injection mode (`--local`) for projects with existing hook managers
+- extract `FindConfig(startDir)` pure function from `FindConfigUpward()` for testability
+- quote kind and body values with single quotes in generated fragment files
+- improve README with badges, features, positioning, install methods, and contributing section
+
 ## [0.1.0] - 2026-05-27
 
 ### Added

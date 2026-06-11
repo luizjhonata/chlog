@@ -1,3 +1,0 @@
-kind: 'Changed'
-body: 'replace per-repo hook with global `core.hooksPath` hook (default) and local injection mode (`--local`) for projects with existing hook managers'
-time: 2026-06-10T04:33:13.631897474Z

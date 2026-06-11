@@ -1,3 +1,0 @@
-kind: 'Changed'
-body: '`batch auto` no longer graduates a 0.x project to 1.0.0; a breaking change bumps the minor until 1.0.0 is reached explicitly'
-time: 2026-06-11T21:25:58.000263976Z

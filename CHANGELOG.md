@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-11
+
+### Changed
+
+- `batch auto` no longer graduates a 0.x project to 1.0.0; a breaking change bumps the minor until 1.0.0 is reached explicitly
+
+### Fixed
+
+- resolve `batch` relative version bumps from git tags and CHANGELOG.md, not only leftover version files (bumps no longer reset to 0.0.0 after a release)
+
 ## [0.2.0] - 2026-06-11
 
 ### Added

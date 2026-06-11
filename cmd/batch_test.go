@@ -5,6 +5,7 @@ package cmd
 import (
 	"bytes"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -37,6 +38,32 @@ func writeVersionFile(t *testing.T, dir, version, content string) {
 
 	path := filepath.Join(changesDir, "v"+version+".md")
 	require.NoError(t, os.WriteFile(path, []byte(content), 0o600))
+}
+
+func runGitCmd(t *testing.T, args ...string) {
+	t.Helper()
+
+	cmd := exec.Command("git", args...)
+	cmd.Env = append(os.Environ(),
+		"GIT_AUTHOR_NAME=test",
+		"GIT_AUTHOR_EMAIL=test@example.com",
+		"GIT_COMMITTER_NAME=test",
+		"GIT_COMMITTER_EMAIL=test@example.com",
+	)
+
+	output, err := cmd.CombinedOutput()
+	require.NoError(t, err, string(output))
+}
+
+func initGitRepoWithTag(t *testing.T, dir, tag string) {
+	t.Helper()
+
+	t.Setenv("GIT_CONFIG_GLOBAL", filepath.Join(t.TempDir(), ".gitconfig"))
+	t.Setenv("GIT_CONFIG_SYSTEM", "/dev/null")
+
+	runGitCmd(t, "init", dir)
+	runGitCmd(t, "-C", dir, "commit", "--allow-empty", "--no-verify", "--no-gpg-sign", "-m", "init")
+	runGitCmd(t, "-C", dir, "tag", tag)
 }
 
 func executeBatch(args ...string) (*bytes.Buffer, error) {
@@ -130,6 +157,55 @@ func TestBatchCmd(t *testing.T) {
 		// then
 		require.NoError(t, err)
 		assert.Contains(t, out.String(), "v0.0.1.md")
+	})
+
+	t.Run("should increment from version in CHANGELOG.md when no version files exist", func(t *testing.T) {
+		// given
+		dir := t.TempDir()
+		writeConfig(t, dir, defaultKinds)
+		writeFragment(t, dir, "001.yaml", "Added", "add feature")
+		writeChangelog(t, dir, "# Changelog\n\n## [Unreleased]\n\n## [0.1.0] - 2026-05-27\n\n### Added\n\n- initial\n")
+		chdir(t, dir)
+
+		// when
+		out, err := executeBatch("minor")
+
+		// then
+		require.NoError(t, err)
+		assert.Contains(t, out.String(), "v0.2.0.md")
+	})
+
+	t.Run("should increment from latest git tag when no version files exist", func(t *testing.T) {
+		// given
+		dir := t.TempDir()
+		writeConfig(t, dir, defaultKinds)
+		writeFragment(t, dir, "001.yaml", "Fixed", "fix bug")
+		initGitRepoWithTag(t, dir, "v0.3.0")
+		chdir(t, dir)
+
+		// when
+		out, err := executeBatch("patch")
+
+		// then
+		require.NoError(t, err)
+		assert.Contains(t, out.String(), "v0.3.1.md")
+	})
+
+	t.Run("should pick the highest version across all sources", func(t *testing.T) {
+		// given
+		dir := t.TempDir()
+		writeConfig(t, dir, defaultKinds)
+		writeFragment(t, dir, "001.yaml", "Added", "feature")
+		writeVersionFile(t, dir, "1.2.0", "## [1.2.0]")
+		writeChangelog(t, dir, "## [2.0.0] - 2026-01-01\n")
+		chdir(t, dir)
+
+		// when
+		out, err := executeBatch("minor")
+
+		// then
+		require.NoError(t, err)
+		assert.Contains(t, out.String(), "v2.1.0.md")
 	})
 
 	t.Run("should fail when no fragments exist", func(t *testing.T) {

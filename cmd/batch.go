@@ -114,10 +114,7 @@ func resolveVersion(input string, cfg *internal.Config, changes []internal.Chang
 		return v, nil
 	}
 
-	latest, err := findLatestVersion(cfg.ChangesDir)
-	if err != nil {
-		return nil, err
-	}
+	latest := findLatestVersion(cfg)
 
 	var bumpType string
 
@@ -133,16 +130,44 @@ func resolveVersion(input string, cfg *internal.Config, changes []internal.Chang
 	return bumpVersion(latest, bumpType)
 }
 
-func findLatestVersion(changesDir string) (*semver.Version, error) {
-	entries, err := os.ReadDir(changesDir)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return semver.NewVersion("0.0.0")
-		}
-		return nil, fmt.Errorf("reading changes directory: %w", err)
+// findLatestVersion resolves the current version by taking the highest across
+// every source that may know it: leftover version files, git tags, and the
+// CHANGELOG.md headings. Version files alone are insufficient because [merge]
+// deletes them, which would otherwise reset relative bumps to 0.0.0.
+func findLatestVersion(cfg *internal.Config) *semver.Version {
+	var candidates []*semver.Version
+
+	candidates = append(candidates, versionsFromChangesDir(cfg.ChangesDir)...)
+	candidates = append(candidates, versionsFromChangelog(cfg.ChangelogPath)...)
+	candidates = append(candidates, versionsFromGitTags()...)
+
+	latest := highestVersion(candidates)
+	if latest == nil {
+		return semver.New(0, 0, 0, "", "")
 	}
 
+	return latest
+}
+
+func highestVersion(versions []*semver.Version) *semver.Version {
 	var latest *semver.Version
+
+	for _, v := range versions {
+		if latest == nil || v.GreaterThan(latest) {
+			latest = v
+		}
+	}
+
+	return latest
+}
+
+func versionsFromChangesDir(changesDir string) []*semver.Version {
+	entries, err := os.ReadDir(changesDir)
+	if err != nil {
+		return nil
+	}
+
+	var versions []*semver.Version
 
 	for _, entry := range entries {
 		name := entry.Name()
@@ -157,16 +182,70 @@ func findLatestVersion(changesDir string) (*semver.Version, error) {
 			continue
 		}
 
-		if latest == nil || v.GreaterThan(latest) {
-			latest = v
+		versions = append(versions, v)
+	}
+
+	return versions
+}
+
+func versionsFromChangelog(changelogPath string) []*semver.Version {
+	data, err := os.ReadFile(changelogPath)
+	if err != nil {
+		return nil
+	}
+
+	var versions []*semver.Version
+
+	for line := range strings.SplitSeq(string(data), "\n") {
+		if !strings.HasPrefix(line, "## [") {
+			continue
 		}
+
+		start := strings.Index(line, "[")
+		end := strings.Index(line, "]")
+		if start < 0 || end <= start+1 {
+			continue
+		}
+
+		v, parseErr := semver.NewVersion(line[start+1 : end])
+		if parseErr != nil {
+			continue
+		}
+
+		versions = append(versions, v)
 	}
 
-	if latest == nil {
-		return semver.NewVersion("0.0.0")
+	return versions
+}
+
+func versionsFromGitTags() []*semver.Version {
+	cmd, err := gitCommand("tag")
+	if err != nil {
+		return nil
 	}
 
-	return latest, nil
+	out, err := cmd.Output()
+	if err != nil {
+		return nil
+	}
+
+	var versions []*semver.Version
+
+	for line := range strings.SplitSeq(string(out), "\n") {
+		tag := strings.TrimSpace(line)
+		if tag == "" {
+			continue
+		}
+
+		v, parseErr := semver.NewVersion(tag)
+		if parseErr != nil {
+			continue
+		}
+
+		versions = append(versions, v)
+	}
+
+	return versions
 }
 
 func inferBumpType(cfg *internal.Config, changes []internal.Change) string {

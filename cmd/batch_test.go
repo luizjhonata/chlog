@@ -134,6 +134,7 @@ func TestBatchCmd(t *testing.T) {
 		writeConfig(t, dir, "kinds:\n  - label: Added\n    auto: minor\n  - label: Changed\n    auto: major\n  - label: Fixed\n    auto: patch\n")
 		writeFragment(t, dir, "001.yaml", "Added", "add feature")
 		writeFragment(t, dir, "002.yaml", "Changed", "breaking change")
+		writeChangelog(t, dir, "## [1.0.0] - 2026-01-01\n")
 		chdir(t, dir)
 
 		// when
@@ -141,7 +142,7 @@ func TestBatchCmd(t *testing.T) {
 
 		// then
 		require.NoError(t, err)
-		assert.Contains(t, out.String(), "v1.0.0.md")
+		assert.Contains(t, out.String(), "v2.0.0.md")
 	})
 
 	t.Run("should start from 0.0.0 when no previous versions exist", func(t *testing.T) {
@@ -206,6 +207,54 @@ func TestBatchCmd(t *testing.T) {
 		// then
 		require.NoError(t, err)
 		assert.Contains(t, out.String(), "v2.1.0.md")
+	})
+
+	t.Run("should cap auto major bump to minor when below 1.0.0", func(t *testing.T) {
+		// given
+		dir := t.TempDir()
+		writeConfig(t, dir, "kinds:\n  - label: Changed\n    auto: major\n")
+		writeFragment(t, dir, "001.yaml", "Changed", "breaking change")
+		writeChangelog(t, dir, "## [0.2.0] - 2026-06-11\n")
+		chdir(t, dir)
+
+		// when
+		out, err := executeBatch("auto")
+
+		// then
+		require.NoError(t, err)
+		assert.Contains(t, out.String(), "v0.3.0.md")
+	})
+
+	t.Run("should allow explicit major bump to reach 1.0.0 from 0.x", func(t *testing.T) {
+		// given
+		dir := t.TempDir()
+		writeConfig(t, dir, defaultKinds)
+		writeFragment(t, dir, "001.yaml", "Added", "feature")
+		writeChangelog(t, dir, "## [0.2.0] - 2026-06-11\n")
+		chdir(t, dir)
+
+		// when
+		out, err := executeBatch("major")
+
+		// then
+		require.NoError(t, err)
+		assert.Contains(t, out.String(), "v1.0.0.md")
+	})
+
+	t.Run("should auto-bump major normally at or above 1.0.0", func(t *testing.T) {
+		// given
+		dir := t.TempDir()
+		writeConfig(t, dir, "kinds:\n  - label: Changed\n    auto: major\n")
+		writeFragment(t, dir, "001.yaml", "Changed", "breaking change")
+		writeChangelog(t, dir, "## [1.2.0] - 2026-06-11\n")
+		chdir(t, dir)
+
+		// when
+		out, err := executeBatch("auto")
+
+		// then
+		require.NoError(t, err)
+		assert.Contains(t, out.String(), "v2.0.0.md")
 	})
 
 	t.Run("should fail when no fragments exist", func(t *testing.T) {

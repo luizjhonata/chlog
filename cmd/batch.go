@@ -122,7 +122,7 @@ func resolveVersion(input string, cfg *internal.Config, changes []internal.Chang
 	case bumpMajor, bumpMinor, bumpPatch:
 		bumpType = input
 	case bumpAuto:
-		bumpType = inferBumpType(cfg, changes)
+		bumpType = capPreReleaseBump(latest, inferBumpType(cfg, changes))
 	default:
 		return nil, fmt.Errorf("invalid version argument %q: use a semver, major, minor, patch, or auto", input)
 	}
@@ -267,6 +267,18 @@ func inferBumpType(cfg *internal.Config, changes []internal.Change) string {
 	}
 
 	return highest
+}
+
+// capPreReleaseBump prevents an inferred auto-bump from graduating a 0.x project
+// to 1.0.0. Per SemVer, the 0.x series is unstable, so a breaking change bumps
+// the minor instead of the major. Reaching 1.0.0 must be an explicit decision
+// (batch major or an explicit version).
+func capPreReleaseBump(latest *semver.Version, bumpType string) string {
+	if latest.Major() == 0 && bumpType == bumpMajor {
+		return bumpMinor
+	}
+
+	return bumpType
 }
 
 func bumpVersion(v *semver.Version, bumpType string) (*semver.Version, error) {

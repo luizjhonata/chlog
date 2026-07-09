@@ -47,7 +47,7 @@ func (c *Change) Marshal() ([]byte, error) {
 					{Kind: yaml.ScalarNode, Value: "body"},
 					{Kind: yaml.ScalarNode, Value: c.Body, Style: yaml.SingleQuotedStyle},
 					{Kind: yaml.ScalarNode, Value: "time"},
-					{Kind: yaml.ScalarNode, Value: timeStr},
+					{Kind: yaml.ScalarNode, Value: timeStr, Style: yaml.SingleQuotedStyle},
 				},
 			},
 		},

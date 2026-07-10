@@ -1,3 +1,0 @@
-kind: 'Security'
-body: 'pin GitHub Actions to full commit SHAs and add Dependabot cooldown to harden CI against supply-chain attacks'
-time: 2026-07-09T20:39:04.156581437Z

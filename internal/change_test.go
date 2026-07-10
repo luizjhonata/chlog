@@ -35,6 +35,10 @@ func TestChangeMarshalRoundtrip(t *testing.T) {
 		data, err := original.Marshal()
 		require.NoError(t, err)
 
+		assert.Contains(t, string(data), "kind: 'Fixed'")
+		assert.Contains(t, string(data), "body: 'resolve timeout on file uploads'")
+		assert.Contains(t, string(data), "time: '2026-05-26T10:00:00Z'")
+
 		dir := t.TempDir()
 		path := filepath.Join(dir, "change.yaml")
 		require.NoError(t, os.WriteFile(path, data, 0o644))

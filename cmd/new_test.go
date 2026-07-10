@@ -60,6 +60,7 @@ func TestNewCmd(t *testing.T) {
 		require.NoError(t, readErr)
 		assert.Contains(t, string(data), "kind: 'Added'")
 		assert.Contains(t, string(data), "body: 'add new feature'")
+		assert.Contains(t, string(data), "time: '")
 	})
 
 	t.Run("should reject unknown kind", func(t *testing.T) {

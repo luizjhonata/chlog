@@ -16,12 +16,12 @@ jobs:
     name: 'code-check > quality:changelog-fragments'
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: 'actions/checkout@v7'
+      - uses: 'actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0' # v7
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
 
-      - uses: 'actions/setup-go@v6'
+      - uses: 'actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16' # v6
         with:
           go-version-file: 'go.mod'
 
@@ -71,7 +71,7 @@ jobs:
     name: 'code-check > style:golangci-lint'
     runs-on: 'ubuntu-latest'
     steps:
-      - uses: 'rios0rios0/pipelines/github/golang/stages/10-code-check/golangci-lint@main'
+      - uses: 'rios0rios0/pipelines/github/golang/stages/10-code-check/golangci-lint@83d8d3e52c104c851eb5635a6b42a1f1af75ce18' # main
     continue-on-error: true
     if: "!startsWith(github.ref, 'refs/tags/')"
 
@@ -82,7 +82,7 @@ jobs:
       contents: 'read'
       security-events: 'write'
     steps:
-      - uses: 'rios0rios0/pipelines/github/global/stages/20-security/codeql@main'
+      - uses: 'rios0rios0/pipelines/github/global/stages/20-security/codeql@83d8d3e52c104c851eb5635a6b42a1f1af75ce18' # main
         with:
           codeql_language: 'go'
     if: "!startsWith(github.ref, 'refs/tags/')"
@@ -94,7 +94,7 @@ jobs:
       contents: 'read'
       security-events: 'write'
     steps:
-      - uses: 'rios0rios0/pipelines/github/global/stages/20-security/semgrep@main'
+      - uses: 'rios0rios0/pipelines/github/global/stages/20-security/semgrep@83d8d3e52c104c851eb5635a6b42a1f1af75ce18' # main
         with:
           semgrep_lang: 'golang'
     if: "!startsWith(github.ref, 'refs/tags/')"
@@ -106,7 +106,7 @@ jobs:
       contents: 'read'
       security-events: 'write'
     steps:
-      - uses: 'rios0rios0/pipelines/github/global/stages/20-security/gitleaks@main'
+      - uses: 'rios0rios0/pipelines/github/global/stages/20-security/gitleaks@83d8d3e52c104c851eb5635a6b42a1f1af75ce18' # main
     if: "!startsWith(github.ref, 'refs/tags/')"
 
   security-sast_hadolint:
@@ -116,7 +116,7 @@ jobs:
       contents: 'read'
       security-events: 'write'
     steps:
-      - uses: 'rios0rios0/pipelines/github/global/stages/20-security/hadolint@main'
+      - uses: 'rios0rios0/pipelines/github/global/stages/20-security/hadolint@83d8d3e52c104c851eb5635a6b42a1f1af75ce18' # main
     continue-on-error: true
     if: "!startsWith(github.ref, 'refs/tags/')"
 
@@ -127,7 +127,7 @@ jobs:
       contents: 'read'
       security-events: 'write'
     steps:
-      - uses: 'rios0rios0/pipelines/github/global/stages/20-security/trivy@main'
+      - uses: 'rios0rios0/pipelines/github/global/stages/20-security/trivy@83d8d3e52c104c851eb5635a6b42a1f1af75ce18' # main
     continue-on-error: true
     if: "!startsWith(github.ref, 'refs/tags/')"
 
@@ -138,7 +138,7 @@ jobs:
       contents: 'read'
       security-events: 'write'
     steps:
-      - uses: 'rios0rios0/pipelines/github/global/stages/20-security/trivy-sca@main'
+      - uses: 'rios0rios0/pipelines/github/global/stages/20-security/trivy-sca@83d8d3e52c104c851eb5635a6b42a1f1af75ce18' # main
     continue-on-error: true
     if: "!startsWith(github.ref, 'refs/tags/')"
 
@@ -149,7 +149,7 @@ jobs:
       contents: 'read'
       security-events: 'write'
     steps:
-      - uses: 'rios0rios0/pipelines/github/golang/stages/20-security/govulncheck@main'
+      - uses: 'rios0rios0/pipelines/github/golang/stages/20-security/govulncheck@83d8d3e52c104c851eb5635a6b42a1f1af75ce18' # main
     continue-on-error: true
     if: "!startsWith(github.ref, 'refs/tags/')"
 
@@ -160,11 +160,11 @@ jobs:
       contents: 'read'
       checks: 'write'
     steps:
-      - uses: 'rios0rios0/pipelines/github/golang/stages/30-tests/all@main'
+      - uses: 'rios0rios0/pipelines/github/golang/stages/30-tests/all@83d8d3e52c104c851eb5635a6b42a1f1af75ce18' # main
 
       - name: 'Test Results'
         if: "always() && hashFiles('junit.xml') != ''"
-        uses: 'dorny/test-reporter@v3'
+        uses: 'dorny/test-reporter@a43b3a5f7366b97d083190328d2c652e1a8b6aa2' # v3
         with:
           name: 'Test Results'
           path: 'junit.xml'
@@ -172,7 +172,7 @@ jobs:
 
       - name: 'Upload Coverage Report'
         if: "always() && hashFiles('coverage.txt') != ''"
-        uses: 'actions/upload-artifact@v7'
+        uses: 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' # v7
         with:
           name: 'coverage-report'
           path: |
@@ -191,13 +191,13 @@ jobs:
     continue-on-error: true
     steps:
       - name: 'Checkout code'
-        uses: 'actions/checkout@v7'
+        uses: 'actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0' # v7
         with:
           fetch-depth: 0
           fetch-tags: true
 
       - name: 'Download coverage artifact'
-        uses: 'actions/download-artifact@v8'
+        uses: 'actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c' # v8
         with:
           name: 'coverage-report'
           path: '.'
@@ -211,7 +211,7 @@ jobs:
           echo "/tmp/sonar-scanner-${SCANNER_VERSION}-linux-x64/bin" >> "$GITHUB_PATH"
 
       - name: 'Checkout scripts'
-        uses: 'rios0rios0/pipelines/github/global/abstracts/scripts-repo@main'
+        uses: 'rios0rios0/pipelines/github/global/abstracts/scripts-repo@83d8d3e52c104c851eb5635a6b42a1f1af75ce18' # main
 
       - name: 'Run SonarQube'
         run: '${{ env.SCRIPTS_DIR }}/global/scripts/tools/sonarqube/run.sh'
@@ -230,7 +230,7 @@ jobs:
       tag_name: v${{ steps.release.outputs.tag_name }}
     steps:
       - id: 'release'
-        uses: 'rios0rios0/pipelines/github/global/stages/40-delivery/release@main'
+        uses: 'rios0rios0/pipelines/github/global/stages/40-delivery/release@83d8d3e52c104c851eb5635a6b42a1f1af75ce18' # main
         with:
           tag_prefix: 'v'
     needs: ['tests-test_all']
@@ -242,7 +242,7 @@ jobs:
     permissions:
       contents: 'write'
     steps:
-      - uses: 'rios0rios0/pipelines/github/golang/stages/40-delivery/binary@main'
+      - uses: 'rios0rios0/pipelines/github/golang/stages/40-delivery/binary@83d8d3e52c104c851eb5635a6b42a1f1af75ce18' # main
         with:
           binary_name: 'chlog'
           binary_path: '.'

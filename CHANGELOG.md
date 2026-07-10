@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-07-10
+
+### Fixed
+
+- emit fragment `time` field single-quoted to satisfy YAML-quoting linters (output unchanged)
+
+### Security
+
+- pin GitHub Actions to full commit SHAs and add Dependabot cooldown to harden CI against supply-chain attacks
+
 ## [0.3.0] - 2026-06-11
 
 ### Changed

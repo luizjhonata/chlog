@@ -11,9 +11,10 @@ import (
 )
 
 type Change struct {
-	Kind string    `yaml:"kind"`
-	Body string    `yaml:"body"`
-	Time time.Time `yaml:"time"`
+	Kind     string    `yaml:"kind"`
+	Body     string    `yaml:"body"`
+	Breaking bool      `yaml:"breaking,omitempty"`
+	Time     time.Time `yaml:"time"`
 }
 
 func LoadChange(path string) (*Change, error) {
@@ -35,21 +36,29 @@ func LoadChange(path string) (*Change, error) {
 func (c *Change) Marshal() ([]byte, error) {
 	timeStr := c.Time.UTC().Format(time.RFC3339Nano)
 
+	content := []*yaml.Node{
+		{Kind: yaml.ScalarNode, Value: "kind"},
+		{Kind: yaml.ScalarNode, Value: c.Kind, Style: yaml.SingleQuotedStyle},
+		{Kind: yaml.ScalarNode, Value: "body"},
+		{Kind: yaml.ScalarNode, Value: c.Body, Style: yaml.SingleQuotedStyle},
+	}
+
+	if c.Breaking {
+		content = append(content,
+			&yaml.Node{Kind: yaml.ScalarNode, Value: "breaking"},
+			&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!bool", Value: "true"},
+		)
+	}
+
+	content = append(content,
+		&yaml.Node{Kind: yaml.ScalarNode, Value: "time"},
+		&yaml.Node{Kind: yaml.ScalarNode, Value: timeStr, Style: yaml.SingleQuotedStyle},
+	)
+
 	doc := &yaml.Node{
 		Kind: yaml.DocumentNode,
 		Content: []*yaml.Node{
-			{
-				Kind: yaml.MappingNode,
-				Tag:  "!!map",
-				Content: []*yaml.Node{
-					{Kind: yaml.ScalarNode, Value: "kind"},
-					{Kind: yaml.ScalarNode, Value: c.Kind, Style: yaml.SingleQuotedStyle},
-					{Kind: yaml.ScalarNode, Value: "body"},
-					{Kind: yaml.ScalarNode, Value: c.Body, Style: yaml.SingleQuotedStyle},
-					{Kind: yaml.ScalarNode, Value: "time"},
-					{Kind: yaml.ScalarNode, Value: timeStr, Style: yaml.SingleQuotedStyle},
-				},
-			},
+			{Kind: yaml.MappingNode, Tag: "!!map", Content: content},
 		},
 	}
 

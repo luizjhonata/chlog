@@ -8,11 +8,11 @@ kinds:
   - label: Added
     auto: minor
   - label: Changed
-    auto: major
+    auto: minor
   - label: Deprecated
     auto: minor
   - label: Removed
-    auto: major
+    auto: minor
   - label: Fixed
     auto: patch
   - label: Security

@@ -63,6 +63,48 @@ func TestNewCmd(t *testing.T) {
 		assert.Contains(t, string(data), "time: '")
 	})
 
+	t.Run("should record breaking flag in fragment when --breaking is set", func(t *testing.T) {
+		// given
+		dir := t.TempDir()
+		writeConfig(t, dir, "kinds:\n  - label: Changed\n    auto: minor\n")
+		chdir(t, dir)
+
+		// when
+		_, err := executeNew("--kind", "Changed", "--body", "rename public API", "--breaking")
+
+		// then
+		require.NoError(t, err)
+
+		entries, readErr := os.ReadDir(filepath.Join(dir, ".changes", "unreleased"))
+		require.NoError(t, readErr)
+		require.Len(t, entries, 1)
+
+		data, readErr := os.ReadFile(filepath.Join(dir, ".changes", "unreleased", entries[0].Name()))
+		require.NoError(t, readErr)
+		assert.Contains(t, string(data), "breaking: true")
+	})
+
+	t.Run("should omit breaking flag in fragment when --breaking is not set", func(t *testing.T) {
+		// given
+		dir := t.TempDir()
+		writeConfig(t, dir, "kinds:\n  - label: Added\n    auto: minor\n")
+		chdir(t, dir)
+
+		// when
+		_, err := executeNew("--kind", "Added", "--body", "add feature")
+
+		// then
+		require.NoError(t, err)
+
+		entries, readErr := os.ReadDir(filepath.Join(dir, ".changes", "unreleased"))
+		require.NoError(t, readErr)
+		require.Len(t, entries, 1)
+
+		data, readErr := os.ReadFile(filepath.Join(dir, ".changes", "unreleased", entries[0].Name()))
+		require.NoError(t, readErr)
+		assert.NotContains(t, string(data), "breaking")
+	})
+
 	t.Run("should reject unknown kind", func(t *testing.T) {
 		// given
 		dir := t.TempDir()

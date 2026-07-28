@@ -69,6 +69,9 @@ This project uses its own tool for changelog management. Do NOT edit `CHANGELOG.
 # 1. For every PR, create a fragment:
 chlog new --kind Added --body "description of the change"
 
+# Add --breaking for a backward-incompatible change (forces a major bump):
+chlog new --kind Changed --breaking --body "rename public flag --out to --output"
+
 # 2. At release time, compile fragments into a version file:
 chlog batch auto
 
@@ -80,8 +83,13 @@ Fragment files live in `.changes/unreleased/` as YAML:
 ```yaml
 kind: Added
 body: description of the change
+breaking: true   # optional; present only for breaking changes, drives major bump
 time: 2026-05-27T12:00:00Z
 ```
+
+Under SemVer, `major` is reserved for backward-incompatible changes. No kind
+maps to `major`; a major bump happens only when a fragment carries `breaking: true`
+(set via `chlog new --breaking`).
 
 Every PR MUST include at least one fragment. Use `chlog check` in CI to enforce this.
 
@@ -93,7 +101,7 @@ Every PR MUST include at least one fragment. Use `chlog check` in CI to enforce 
 
 | Command | Purpose |
 |---------|---------|
-| `chlog new --kind <kind> --body "<text>"` | Create a changelog fragment |
+| `chlog new --kind <kind> --body "<text>" [--breaking]` | Create a changelog fragment (`--breaking` forces a major bump) |
 | `chlog batch <version\|major\|minor\|patch\|auto>` | Compile fragments into versioned file |
 | `chlog merge` | Append version files to CHANGELOG.md |
 | `chlog check` | Validate fragments exist (CI) |

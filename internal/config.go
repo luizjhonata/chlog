@@ -15,6 +15,14 @@ var (
 	ErrEmptyKinds     = errors.New("kinds list must not be empty")
 )
 
+// Auto-bump levels a kind may map to. Major is intentionally absent: under
+// SemVer a major bump means a backward-incompatible change, signalled per
+// fragment via the breaking flag, never inferred from a kind.
+const (
+	autoMinor = "minor"
+	autoPatch = "patch"
+)
+
 func configFileNames() []string {
 	return []string{".chlog.yaml", ".chlog.yml"}
 }
@@ -43,12 +51,12 @@ func DefaultConfig() *Config {
 		KindFormat:    `### {{.Kind}}`,
 		ChangeFormat:  `- {{.Body}}`,
 		Kinds: []KindConfig{
-			{Label: "Added", Auto: "minor"},
-			{Label: "Changed", Auto: "major"},
-			{Label: "Deprecated", Auto: "minor"},
-			{Label: "Removed", Auto: "major"},
-			{Label: "Fixed", Auto: "patch"},
-			{Label: "Security", Auto: "patch"},
+			{Label: "Added", Auto: autoMinor},
+			{Label: "Changed", Auto: autoMinor},
+			{Label: "Deprecated", Auto: autoMinor},
+			{Label: "Removed", Auto: autoMinor},
+			{Label: "Fixed", Auto: autoPatch},
+			{Label: "Security", Auto: autoPatch},
 		},
 	}
 }

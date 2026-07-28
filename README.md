@@ -64,21 +64,42 @@ make install    # builds and copies to ~/.local/bin
 ```bash
 chlog new --kind Added --body "user authentication via OAuth2"
 chlog new --kind Fixed --body "null pointer on empty config"
+chlog new --kind Changed --breaking --body "rename the --out flag to --output"
 ```
 
 Kind matching is case-insensitive. The fragment is written to `.changes/unreleased/<timestamp>-<random>.yaml`.
+
+#### Breaking changes
+
+The `--breaking` flag marks a change as **backward-incompatible with the public
+API**. This is the only thing that forces a major version bump — the kind alone
+never does. Per SemVer, `MAJOR` is reserved for incompatible changes, so
+whether a change is breaking is a decision only you can make; chlog cannot infer
+it from the kind. Use `--breaking` whenever the change would require consumers to
+update their code (removed/renamed public API, changed defaults or signatures,
+dropped support, etc.).
 
 ### Compile fragments into a version file
 
 ```bash
 chlog batch 1.0.0   # explicit version
 chlog batch minor   # bump minor from latest
-chlog batch auto    # infer bump from kind→level mapping
+chlog batch auto    # infer bump from kind→level mapping (+ breaking flag)
 ```
 
 This creates `.changes/v1.0.0.md` with Keep a Changelog format and deletes consumed fragments.
 
 The base version is resolved from the highest of: existing version files, git tags, and `CHANGELOG.md` headings.
+
+`auto` follows SemVer strictly:
+
+- **major** — only when at least one fragment is marked `--breaking`. No kind on
+  its own produces a major bump.
+- **minor** — a fragment mapped to `minor` (by default `Added`, `Changed`,
+  `Deprecated`, `Removed`), when nothing is breaking.
+- **patch** — otherwise (by default `Fixed`, `Security`).
+
+The highest level among all fragments wins.
 
 While the project is below `1.0.0`, `auto` never graduates to `1.0.0` on its own — a breaking change bumps the minor instead (e.g. `0.2.0` → `0.3.0`), per SemVer's unstable-`0.x` rule. Reaching `1.0.0` is a deliberate, explicit step (`chlog batch major` or `chlog batch 1.0.0`).
 
@@ -164,6 +185,12 @@ being asked, before committing.
 - Valid kinds: Added, Changed, Deprecated, Removed, Fixed, Security
 - Choose the kind that best matches the change (e.g., new feature → Added,
   bug fix → Fixed, behavior change → Changed, removal → Removed, security fix → Security).
+- If the change is backward-INCOMPATIBLE with the public API (a breaking
+  change), you MUST add the `--breaking` flag:
+  `chlog new --kind <Kind> --breaking --body "<description>"`.
+  This is the ONLY thing that triggers a major version bump — the kind alone
+  never does (per SemVer, major = incompatible change). When unsure whether a
+  change breaks compatibility, ask the user instead of guessing.
 - Fragments are YAML files in `.changes/unreleased/`; stage them with your commit.
 - `chlog check` fails the build when a fragment is missing — never skip it.
 <!-- chlog:end -->
@@ -199,18 +226,22 @@ kinds:
   - label: Added
     auto: minor
   - label: Changed
-    auto: major
+    auto: minor
   - label: Deprecated
     auto: minor
   - label: Removed
-    auto: major
+    auto: minor
   - label: Fixed
     auto: patch
   - label: Security
     auto: patch
 ```
 
-The `auto` field maps each kind to a semver bump level, used by `chlog batch auto`.
+The `auto` field maps each kind to a semver bump level (`minor` or `patch`),
+used by `chlog batch auto`. Intentionally, no kind maps to `major`: under SemVer
+a major bump means a backward-incompatible change, which cannot be inferred from
+a change category. A major bump happens only when a fragment is created with
+`--breaking` (see [Breaking changes](#breaking-changes)).
 
 Format fields use Go templates. Available variables:
 

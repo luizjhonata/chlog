@@ -252,6 +252,10 @@ func inferBumpType(cfg *internal.Config, changes []internal.Change) string {
 	highest := bumpPatch
 
 	for _, c := range changes {
+		if c.Breaking {
+			return bumpMajor
+		}
+
 		kind, found := cfg.FindKind(c.Kind)
 		if !found || kind.Auto == "" {
 			continue

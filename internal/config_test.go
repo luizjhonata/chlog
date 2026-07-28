@@ -28,6 +28,19 @@ func TestDefaultConfig(t *testing.T) {
 		assert.Equal(t, "Added", cfg.Kinds[0].Label)
 		assert.Equal(t, "Security", cfg.Kinds[5].Label)
 	})
+
+	t.Run("should never map a default kind to major so major tracks breaking changes only", func(t *testing.T) {
+		t.Parallel()
+
+		// when
+		cfg := DefaultConfig()
+
+		// then
+		for _, kind := range cfg.Kinds {
+			assert.NotEqual(t, "major", kind.Auto,
+				"kind %q must not auto-bump major; major is reserved for breaking changes", kind.Label)
+		}
+	})
 }
 
 func TestLoadConfigFromPath(t *testing.T) {

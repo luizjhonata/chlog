@@ -30,6 +30,20 @@ func writeFragment(t *testing.T, dir, filename, kind, body string) {
 	require.NoError(t, os.WriteFile(filepath.Join(unreleasedDir, filename), data, 0o600))
 }
 
+func writeBreakingFragment(t *testing.T, dir, filename, kind, body string) {
+	t.Helper()
+
+	unreleasedDir := filepath.Join(dir, ".changes", "unreleased")
+	require.NoError(t, os.MkdirAll(unreleasedDir, 0o750))
+
+	change := &internal.Change{Kind: kind, Body: body, Breaking: true, Time: time.Now().UTC()}
+
+	data, err := change.Marshal()
+	require.NoError(t, err)
+
+	require.NoError(t, os.WriteFile(filepath.Join(unreleasedDir, filename), data, 0o600))
+}
+
 func writeVersionFile(t *testing.T, dir, version, content string) {
 	t.Helper()
 
@@ -255,6 +269,54 @@ func TestBatchCmd(t *testing.T) {
 		// then
 		require.NoError(t, err)
 		assert.Contains(t, out.String(), "v2.0.0.md")
+	})
+
+	t.Run("should auto-bump major when a breaking fragment exists at or above 1.0.0", func(t *testing.T) {
+		// given
+		dir := t.TempDir()
+		writeConfig(t, dir, "kinds:\n  - label: Changed\n    auto: minor\n")
+		writeBreakingFragment(t, dir, "001.yaml", "Changed", "rename public API")
+		writeChangelog(t, dir, "## [1.2.0] - 2026-06-11\n")
+		chdir(t, dir)
+
+		// when
+		out, err := executeBatch("auto")
+
+		// then
+		require.NoError(t, err)
+		assert.Contains(t, out.String(), "v2.0.0.md")
+	})
+
+	t.Run("should cap breaking auto bump to minor when below 1.0.0", func(t *testing.T) {
+		// given
+		dir := t.TempDir()
+		writeConfig(t, dir, "kinds:\n  - label: Changed\n    auto: minor\n")
+		writeBreakingFragment(t, dir, "001.yaml", "Changed", "rename public API")
+		writeChangelog(t, dir, "## [0.2.0] - 2026-06-11\n")
+		chdir(t, dir)
+
+		// when
+		out, err := executeBatch("auto")
+
+		// then
+		require.NoError(t, err)
+		assert.Contains(t, out.String(), "v0.3.0.md")
+	})
+
+	t.Run("should not auto-bump major for Changed when it is not breaking", func(t *testing.T) {
+		// given
+		dir := t.TempDir()
+		writeConfig(t, dir, "kinds:\n  - label: Changed\n    auto: minor\n")
+		writeFragment(t, dir, "001.yaml", "Changed", "improve error message")
+		writeChangelog(t, dir, "## [1.2.0] - 2026-06-11\n")
+		chdir(t, dir)
+
+		// when
+		out, err := executeBatch("auto")
+
+		// then
+		require.NoError(t, err)
+		assert.Contains(t, out.String(), "v1.3.0.md")
 	})
 
 	t.Run("should fail when no fragments exist", func(t *testing.T) {

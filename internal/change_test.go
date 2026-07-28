@@ -49,7 +49,45 @@ func TestChangeMarshalRoundtrip(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, original.Kind, loaded.Kind)
 		assert.Equal(t, original.Body, loaded.Body)
+		assert.False(t, loaded.Breaking)
 		assert.True(t, original.Time.Equal(loaded.Time))
+	})
+
+	t.Run("should omit breaking field when change is not breaking", func(t *testing.T) {
+		t.Parallel()
+
+		// given
+		original := &Change{Kind: "Fixed", Body: "fix a bug", Time: timeOne}
+
+		// when
+		data, err := original.Marshal()
+
+		// then
+		require.NoError(t, err)
+		assert.NotContains(t, string(data), "breaking")
+	})
+
+	t.Run("should marshal and unmarshal breaking flag when change is breaking", func(t *testing.T) {
+		t.Parallel()
+
+		// given
+		original := &Change{Kind: "Changed", Body: "rename public API", Breaking: true, Time: timeOne}
+
+		// when
+		data, err := original.Marshal()
+		require.NoError(t, err)
+
+		assert.Contains(t, string(data), "breaking: true")
+
+		dir := t.TempDir()
+		path := filepath.Join(dir, "change.yaml")
+		require.NoError(t, os.WriteFile(path, data, 0o644))
+
+		loaded, err := LoadChange(path)
+
+		// then
+		require.NoError(t, err)
+		assert.True(t, loaded.Breaking)
 	})
 }
 

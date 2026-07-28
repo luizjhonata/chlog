@@ -15,6 +15,8 @@ import (
 func newNewCmd() *cobra.Command {
 	var kind, body string
 
+	var breaking bool
+
 	cmd := &cobra.Command{
 		Use:   "new",
 		Short: "Create a new changelog fragment",
@@ -30,9 +32,10 @@ func newNewCmd() *cobra.Command {
 			}
 
 			change := &internal.Change{
-				Kind: matched.Label,
-				Body: body,
-				Time: time.Now().UTC(),
+				Kind:     matched.Label,
+				Body:     body,
+				Breaking: breaking,
+				Time:     time.Now().UTC(),
 			}
 
 			data, err := change.Marshal()
@@ -66,6 +69,8 @@ func newNewCmd() *cobra.Command {
 
 	cmd.Flags().StringVarP(&kind, "kind", "k", "", "kind of change (e.g., Added, Fixed)")
 	cmd.Flags().StringVarP(&body, "body", "b", "", "description of the change")
+	cmd.Flags().BoolVar(&breaking, "breaking", false,
+		"mark the change as a backward-incompatible (breaking) change; forces a major bump")
 	_ = cmd.MarkFlagRequired("kind")
 	_ = cmd.MarkFlagRequired("body")
 

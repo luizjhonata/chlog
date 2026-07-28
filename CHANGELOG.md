@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-28
+
+### Added
+
+- chlog new --breaking flag to mark backward-incompatible changes and force a major bump
+
+### Changed
+
+- auto bump no longer maps Changed/Removed to major; major now requires an explicit breaking fragment, per SemVer
+
 ## [0.3.1] - 2026-07-10
 
 ### Fixed

@@ -1,3 +1,0 @@
-kind: 'Added'
-body: 'chlog new --breaking flag to mark backward-incompatible changes and force a major bump'
-time: '2026-07-28T16:34:42.135548307Z'

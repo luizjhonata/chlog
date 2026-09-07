@@ -27,13 +27,14 @@ const aiRulesTemplate = "%s\n" +
 	"\n" +
 	"- Do NOT edit CHANGELOG.md directly; it is generated from fragments.\n" +
 	"- Create the fragment with:\n" +
-	"  `chlog new --kind <Kind> --body \"<imperative description>\"`\n" +
+	"  `chlog new --kind <Kind> --body '<past-tense description>'`\n" +
+	"- Write an apostrophe inside the single-quoted body as `'\\''`.\n" +
 	"- Valid kinds: %s\n" +
 	"- Choose the kind that best matches the change (e.g., new feature → Added,\n" +
 	"  bug fix → Fixed, behavior change → Changed, removal → Removed, security fix → Security).\n" +
 	"- If the change is backward-INCOMPATIBLE with the public API (a breaking\n" +
 	"  change), you MUST add the `--breaking` flag:\n" +
-	"  `chlog new --kind <Kind> --breaking --body \"<description>\"`.\n" +
+	"  `chlog new --kind <Kind> --breaking --body '<past-tense description>'`.\n" +
 	"  This is the ONLY thing that triggers a major version bump — the kind alone\n" +
 	"  never does (per SemVer, major = incompatible change). When unsure whether a\n" +
 	"  change breaks compatibility, ask the user instead of guessing.\n" +

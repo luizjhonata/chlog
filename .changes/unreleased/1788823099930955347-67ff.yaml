@@ -1,0 +1,3 @@
+kind: 'Changed'
+body: 'changed both `chlog new` examples in the `chlog ai setup` rules block to show the fragment body as ''<past-tense description>'' in single quotes: past tense because a Keep a Changelog entry describes what changed, and single quotes because a body carries backticks that a double-quoted shell argument would command-substitute'
+time: '2026-09-07T23:18:19.930873107Z'

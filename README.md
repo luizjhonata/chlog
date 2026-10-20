@@ -149,13 +149,14 @@ assistant creates fragments automatically whenever you work in a chlog repo.
 
 | Assistant | Detected via | Instruction file |
 |-----------|--------------|------------------|
-| Claude Code | `claude` in `PATH` or `~/.claude/` | `CLAUDE.md` |
+| Claude Code | `claude` in `PATH` or `~/.claude/` | `CLAUDE.md`, or `AGENTS.md` (see below) |
 | OpenAI Codex | `codex` in `PATH` or `~/.codex/` | `AGENTS.md` |
 | Cursor | `~/.cursor/` or app config dir | `AGENTS.md` |
 | Gemini CLI | `gemini` in `PATH` or `~/.gemini/` | `GEMINI.md` |
 | GitHub Copilot | `~/.config/github-copilot/` | `.github/copilot-instructions.md` |
 | Windsurf | `~/.windsurf/`, `~/.codeium/windsurf/` or app config dir | `.windsurf/rules/chlog.md` |
 
+- For Claude Code, the block goes to `AGENTS.md` when `CLAUDE.md` contains an `@AGENTS.md` import line, or when `CLAUDE.md` does not exist but `AGENTS.md` does; otherwise it goes to `CLAUDE.md`. A block that an earlier version wrote into such a `CLAUDE.md` shim is removed, so Claude loads the rule once
 - The injected rule is conditional — it only applies in repos that have a `.chlog.yaml`, so it is safe to commit and share
 - Idempotent — the block is delimited by `<!-- chlog:start -->` / `<!-- chlog:end -->` and existing content is preserved
 - If no supported assistant is detected, the command does nothing

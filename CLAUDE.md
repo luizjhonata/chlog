@@ -107,5 +107,5 @@ Every PR MUST include at least one fragment. Use `chlog check` in CI to enforce 
 | `chlog check` | Validate fragments exist (CI) |
 | `chlog hook install [--local] [--force]` | Install a global or local pre-commit hook that runs `chlog check` |
 | `chlog hook uninstall [--local]` | Remove the chlog-managed hook (global or local) |
-| `chlog ai setup [--force]` | Inject chlog rules into detected AI assistant instruction files |
+| `chlog ai setup [--force]` | Inject chlog rules into detected AI assistant instruction files (Claude targets `AGENTS.md` when `CLAUDE.md` imports it with `@AGENTS.md`, or is absent while `AGENTS.md` exists, and removes a block an earlier version left in that shim) |
 | `chlog --version` | Print version |

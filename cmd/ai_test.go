@@ -282,4 +282,172 @@ func TestAISetupCmd(t *testing.T) {
 		assert.Contains(t, content, "Spice")
 		assert.Contains(t, content, "Sauce")
 	})
+
+	t.Run("should write block to AGENTS.md when CLAUDE.md only imports it", func(t *testing.T) {
+		// given
+		home := setupAIEnv(t)
+		mkHomeDir(t, home, ".claude")
+		repo := t.TempDir()
+		chdir(t, repo)
+
+		shim := "@AGENTS.md\n"
+		require.NoError(t, os.WriteFile(filepath.Join(repo, claudeFile), []byte(shim), 0o600))
+
+		// when
+		_, err := executeAISetup()
+
+		// then
+		require.NoError(t, err)
+
+		data, readErr := os.ReadFile(filepath.Join(repo, agentsFile))
+		require.NoError(t, readErr)
+		assert.Equal(t, 1, strings.Count(string(data), aiBlockStart))
+
+		shimData, shimErr := os.ReadFile(filepath.Join(repo, claudeFile))
+		require.NoError(t, shimErr)
+		assert.Equal(t, shim, string(shimData))
+	})
+
+	for name, args := range map[string][]string{"without force": nil, "with force": {"--force"}} {
+		t.Run("should move a legacy shim block to AGENTS.md "+name, func(t *testing.T) {
+			// given
+			home := setupAIEnv(t)
+			mkHomeDir(t, home, ".claude")
+			repo := t.TempDir()
+			chdir(t, repo)
+
+			shim := "@AGENTS.md\n"
+			legacy := appendBlock(shim, aiRulesBlock("Added"))
+			require.NoError(t, os.WriteFile(filepath.Join(repo, claudeFile), []byte(legacy), 0o600))
+
+			// when
+			out, err := executeAISetup(args...)
+
+			// then
+			require.NoError(t, err)
+			assert.Contains(t, out.String(), "removed duplicate block from "+claudeFile)
+
+			data, readErr := os.ReadFile(filepath.Join(repo, agentsFile))
+			require.NoError(t, readErr)
+			assert.Equal(t, 1, strings.Count(string(data), aiBlockStart))
+
+			shimData, shimErr := os.ReadFile(filepath.Join(repo, claudeFile))
+			require.NoError(t, shimErr)
+			assert.Equal(t, shim, string(shimData))
+		})
+	}
+
+	t.Run("should keep the CLAUDE.md block when CLAUDE.md has no AGENTS.md import", func(t *testing.T) {
+		// given
+		home := setupAIEnv(t)
+		mkHomeDir(t, home, ".claude")
+		mkHomeDir(t, home, ".codex")
+		repo := t.TempDir()
+		chdir(t, repo)
+
+		full := appendBlock("# Full rules\n", aiRulesBlock("Added"))
+		require.NoError(t, os.WriteFile(filepath.Join(repo, claudeFile), []byte(full), 0o600))
+
+		// when
+		_, err := executeAISetup()
+
+		// then
+		require.NoError(t, err)
+
+		claudeData, claudeErr := os.ReadFile(filepath.Join(repo, claudeFile))
+		require.NoError(t, claudeErr)
+		assert.Equal(t, full, string(claudeData))
+	})
+
+	t.Run("should write one block to AGENTS.md when shim and codex are both detected", func(t *testing.T) {
+		// given
+		home := setupAIEnv(t)
+		mkHomeDir(t, home, ".claude")
+		mkHomeDir(t, home, ".codex")
+		repo := t.TempDir()
+		chdir(t, repo)
+
+		shim := "  @AGENTS.md  \n"
+		require.NoError(t, os.WriteFile(filepath.Join(repo, claudeFile), []byte(shim), 0o600))
+
+		// when
+		_, err := executeAISetup()
+
+		// then
+		require.NoError(t, err)
+
+		data, readErr := os.ReadFile(filepath.Join(repo, agentsFile))
+		require.NoError(t, readErr)
+		assert.Equal(t, 1, strings.Count(string(data), aiBlockStart))
+
+		shimData, shimErr := os.ReadFile(filepath.Join(repo, claudeFile))
+		require.NoError(t, shimErr)
+		assert.Equal(t, shim, string(shimData))
+	})
+
+	t.Run("should write block to AGENTS.md when only AGENTS.md exists", func(t *testing.T) {
+		// given
+		home := setupAIEnv(t)
+		mkHomeDir(t, home, ".claude")
+		repo := t.TempDir()
+		chdir(t, repo)
+
+		require.NoError(t, os.WriteFile(filepath.Join(repo, agentsFile), []byte("# Rules\n"), 0o600))
+
+		// when
+		_, err := executeAISetup()
+
+		// then
+		require.NoError(t, err)
+
+		data, readErr := os.ReadFile(filepath.Join(repo, agentsFile))
+		require.NoError(t, readErr)
+		assert.Contains(t, string(data), aiBlockStart)
+
+		_, statErr := os.Stat(filepath.Join(repo, claudeFile))
+		assert.True(t, os.IsNotExist(statErr))
+	})
+
+	t.Run("should write block to CLAUDE.md when it has no AGENTS.md import", func(t *testing.T) {
+		// given
+		home := setupAIEnv(t)
+		mkHomeDir(t, home, ".claude")
+		repo := t.TempDir()
+		chdir(t, repo)
+
+		require.NoError(t, os.WriteFile(filepath.Join(repo, claudeFile), []byte("# Full rules\n"), 0o600))
+		require.NoError(t, os.WriteFile(filepath.Join(repo, agentsFile), []byte("# Other\n"), 0o600))
+
+		// when
+		_, err := executeAISetup()
+
+		// then
+		require.NoError(t, err)
+
+		data, readErr := os.ReadFile(filepath.Join(repo, claudeFile))
+		require.NoError(t, readErr)
+		assert.Contains(t, string(data), aiBlockStart)
+
+		agentsData, agentsErr := os.ReadFile(filepath.Join(repo, agentsFile))
+		require.NoError(t, agentsErr)
+		assert.NotContains(t, string(agentsData), aiBlockStart)
+	})
+
+	t.Run("should create CLAUDE.md when neither CLAUDE.md nor AGENTS.md exists", func(t *testing.T) {
+		// given
+		home := setupAIEnv(t)
+		mkHomeDir(t, home, ".claude")
+		repo := t.TempDir()
+		chdir(t, repo)
+
+		// when
+		_, err := executeAISetup()
+
+		// then
+		require.NoError(t, err)
+		assert.FileExists(t, filepath.Join(repo, claudeFile))
+
+		_, statErr := os.Stat(filepath.Join(repo, agentsFile))
+		assert.True(t, os.IsNotExist(statErr))
+	})
 }

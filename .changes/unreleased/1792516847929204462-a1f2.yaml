@@ -1,0 +1,3 @@
+kind: 'Fixed'
+body: 'fixed `chlog ai setup` writing its block into a `CLAUDE.md` shim that only imports `@AGENTS.md`; the block now goes to `AGENTS.md`, and a block left in the shim by an earlier version is removed'
+time: '2026-10-20T17:20:47.928188554Z'

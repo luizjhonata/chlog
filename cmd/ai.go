@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"strings"
 
 	"github.com/luizjhonata/chlog/internal"
@@ -14,6 +15,10 @@ import (
 const (
 	aiBlockStart = "<!-- chlog:start -->"
 	aiBlockEnd   = "<!-- chlog:end -->"
+
+	agentsFileName = "AGENTS.md"
+	claudeFileName = "CLAUDE.md"
+	agentsImport   = "@" + agentsFileName
 )
 
 const aiRulesTemplate = "%s\n" +
@@ -49,9 +54,9 @@ type assistant struct {
 
 func supportedAssistants() []assistant {
 	return []assistant{
-		{name: "Claude", targetFile: "CLAUDE.md", isInstalled: detectClaude},
-		{name: "Codex", targetFile: "AGENTS.md", isInstalled: detectCodex},
-		{name: "Cursor", targetFile: "AGENTS.md", isInstalled: detectCursor},
+		{name: "Claude", targetFile: claudeTargetFile(), isInstalled: detectClaude},
+		{name: "Codex", targetFile: agentsFileName, isInstalled: detectCodex},
+		{name: "Cursor", targetFile: agentsFileName, isInstalled: detectCursor},
 		{name: "Gemini", targetFile: "GEMINI.md", isInstalled: detectGemini},
 		{
 			name:        "Copilot",
@@ -64,6 +69,33 @@ func supportedAssistants() []assistant {
 			isInstalled: detectWindsurf,
 		},
 	}
+}
+
+// claudeTargetFile returns AGENTS.md when CLAUDE.md is a shim that imports it
+// (or does not exist while AGENTS.md does), and CLAUDE.md otherwise.
+func claudeTargetFile() string {
+	data, err := os.ReadFile(claudeFileName)
+	if err != nil {
+		if os.IsNotExist(err) && fileExists(agentsFileName) {
+			return agentsFileName
+		}
+
+		return claudeFileName
+	}
+
+	for line := range strings.SplitSeq(string(data), "\n") {
+		if strings.TrimSpace(line) == agentsImport {
+			return agentsFileName
+		}
+	}
+
+	return claudeFileName
+}
+
+func fileExists(path string) bool {
+	info, err := os.Stat(path)
+
+	return err == nil && !info.IsDir()
 }
 
 func newAiCmd() *cobra.Command {
@@ -118,7 +150,42 @@ func runAiSetup(cmd *cobra.Command, force bool) error {
 		fmt.Fprintf(cmd.OutOrStdout(), "%s %s\n", action, file)
 	}
 
+	removed, err := removeLegacyClaudeBlock(files)
+	if err != nil {
+		return err
+	}
+
+	if removed {
+		fmt.Fprintf(cmd.OutOrStdout(), "removed duplicate block from %s\n", claudeFileName)
+	}
+
 	return nil
+}
+
+// removeLegacyClaudeBlock drops the chlog block that earlier versions wrote into
+// a CLAUDE.md shim, so Claude does not load the rules twice once AGENTS.md holds them.
+func removeLegacyClaudeBlock(files []string) (bool, error) {
+	if !slices.Contains(files, agentsFileName) || claudeTargetFile() != agentsFileName {
+		return false, nil
+	}
+
+	data, err := os.ReadFile(claudeFileName)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return false, nil
+		}
+
+		return false, fmt.Errorf("reading %s: %w", claudeFileName, err)
+	}
+
+	content := string(data)
+	if !strings.Contains(content, aiBlockStart) {
+		return false, nil
+	}
+
+	cleaned := strings.TrimRight(removeMarkedBlock(content, aiBlockStart, aiBlockEnd), "\n") + "\n"
+
+	return true, writeAIFile(claudeFileName, cleaned)
 }
 
 func detectTargetFiles() []string {

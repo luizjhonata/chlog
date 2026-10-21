@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-21
+
+### Fixed
+
+- fixed `chlog ai setup` writing its block into a `CLAUDE.md` shim that only imports `@AGENTS.md`; the block now goes to `AGENTS.md`, and a block left in the shim by an earlier version is removed
+
 ## [0.4.0] - 2026-07-28
 
 ### Added
